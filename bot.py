@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import telebot
 from telebot import types
 
+import requests
+
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -133,10 +135,55 @@ def clarifying_questions(domain: str = "акции") -> str:
     )
 
 
+def get_fx_rates():
+    # url = "https://api.exchangerate.host/latest?base=USD&symbols=RUB,EUR"
+    # resp = requests.get(url, timeout=10)
+    # data = resp.json()
+    # usd_rub = data["rates"]["RUB"]
+    # eur_usd = data["rates"]["EUR"]
+    btc_usd = requests.get("https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD", timeout=10).json().get("USD")
+    eth_usd = requests.get("https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD", timeout=10).json().get("USD")
+
+    return btc_usd, eth_usd
+@bot.message_handler(commands=["fx"])
+def handle_fx(message):
+    try:
+        btc_usd, eth_usd = get_fx_rates()
+        text = (
+            f"📊 <b>Курсы монет</b>\n"
+            f"1 BTC = {btc_usd:.2f} USD\n"
+            f"1 ETH = {eth_usd:.2f} USD\n\n"
+            f"{DISCLAIMER}"
+        )
+    except Exception:
+        text = "Не удалось загрузить данные о курсах валют."
+    bot.reply_to(message, text)
+
+NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+def get_finance_news():
+    api_key = "your_api_key_here"
+    url = f"https://min-api.cryptocompare.com/data/v2/news/?lang=EN&api_key={api_key}"
+    resp = requests.get(url)
+    data = resp.json()
+    return [article["title"] for article in data.get("Data", [])[:3]]
+@bot.message_handler(commands=["news"])
+def handle_news(message):
+    try:
+        headlines = get_finance_news()
+        text = "📰 <b>Последние новости</b>\n" + "\n".join([f"• {h}" for h in headlines])
+    except Exception:
+        text = "Не удалось загрузить новости."
+    bot.reply_to(message, text)
+
 
 @bot.message_handler(content_types=["text"])
 def handle_text(message: telebot.types.Message):
     text = (message.text or "").strip()
+
+    if "курс" in text or "btc" in text or "eth" in text:
+        return handle_fx(message)
+    if "новост" in text or "рынок" in text or "экономик" in text:
+        return handle_news(message)
 
     if text.lower() in ["биткоин", "курс биткоина", "курс bitcoin", "bitcoin"]:
         bot.reply_to(message, "скоро будет")
