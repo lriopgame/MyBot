@@ -21,9 +21,7 @@ bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 
 ROLE_NAME = "ОбзорщикВалют"
 ROLE_PROMPT = (
-    "Ты — ассистент финансового аналитика. Отвечай кратко, структурированно, без жаргона. "
-    "Если пользователь просит инвестиционный совет — добавь дисклеймер 'не является инвест. рекомендацией'. "
-    "Если данных не хватает — попроси уточнить. Отмечай риски и альтернативы."
+    "Ты — ассистент финансового аналитика."
 )
 DISCLAIMER = (
     "⚠️ Это не является инвестиционной рекомендацией. "
@@ -71,7 +69,7 @@ def handle_about(message: telebot.types.Message):
 @bot.message_handler(commands=["capabilities"])
 def handle_capabilities(message: telebot.types.Message):
     text = (
-        "<b>Что умею (MVP практики №2)</b>:\n"
+        "<b>Что умею </b>:\n"
         "• Отвечать на базовые вопросы вежливо и структурированно\n"
         "• Давать шаблон мини-анализа компании (без живых данных)\n"
         "• Готовить список уточняющих вопросов для исследования\n"
@@ -174,6 +172,11 @@ def handle_news(message):
     except Exception:
         text = "Не удалось загрузить новости."
     bot.reply_to(message, text)
+
+
+# @bot.message_handler(commands=["report"])
+# def handle_report(message):
+#     return
 
 
 @bot.message_handler(content_types=["text"])
