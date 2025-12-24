@@ -3,9 +3,7 @@ import logging
 from dotenv import load_dotenv
 import telebot
 from telebot import types
-
 import requests
-
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
