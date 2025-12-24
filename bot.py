@@ -5,6 +5,12 @@ import telebot
 from telebot import types
 import requests
 from llm import llm_complete, LLMError
+import pandas as pd
+import matplotlib.pyplot as plt
+import asyncio
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
+from aiogram.types import FSInputFile
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -44,7 +50,33 @@ def get_usd_rate(message):
         text = f"⚠️ Ошибка: {e}"
         bot.reply_to(message, text)
 
-
+def analyze_and_plot():
+    df = pd.read_csv('data.csv')
+    df['Date'] = pd.to_datetime(df['Date'])
+    stats = df['Price'].describe()
+    print("Описательная статистика:\n", stats)
+    plt.figure(figsize=(10, 6))
+    plt.plot(df['Date'], df['Price'], marker='o', linestyle='-', color='orange', label='BTC Price')
+    plt.title('Bitcoin Price Dynamics')
+    plt.xlabel('Date')
+    plt.ylabel('Price (USD)')
+    plt.grid(True)
+    plt.legend()
+    chart_path = "btc_chart.png"
+    plt.savefig(chart_path)
+    plt.close()
+    return chart_path
+@bot.message_handler(commands=["сtb"])
+async def send_welcome(message: types.Message):
+    await message.answer("Привет! Напиши /get_chart, чтобы получить актуальный график биткоина.")
+@bot.message_handler(commands=["get_chart"])
+async def send_chart(message: types.Message):
+    try:
+        path = analyze_and_plot()
+        photo = FSInputFile(path)
+        await message.answer_photo(photo, caption="📊 Анализ курса Bitcoin на основе ваших данных.")
+    except Exception as e:
+        await message.answer(f"Ошибка при обработке данных: {e}")
 
 @bot.message_handler(commands=['ask'])
 def handle_ask(message):
