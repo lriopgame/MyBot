@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import telebot
 from telebot import types
 import requests
+from llm import llm_complete, LLMError
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -25,6 +26,25 @@ DISCLAIMER = (
     "⚠️ Это не является инвестиционной рекомендацией. "
     "Примите самостоятельное решение с учётом ваших рисков."
 )
+SYSTEM_PROMPT = (
+    'Ты — узкоспециализированный ассистент. Отвечай кратко и структурированно. '
+    'Если вопрос вне твоей темы — попроси уточнить или вежливо откажись. '
+    'Используй маркированные списки и заголовки. '
+    'Если ответ может быть воспринят как совет — добавь дисклеймер.'
+)
+
+@bot.message_handler(commands=['ask'])
+def handle_ask(message):
+    text = (message.text or '').split(' ', 1)
+    question = text[1].strip() if len(text) > 1 else ''
+    if not question:
+        return bot.reply_to(message, 'Укажите вопрос: /ask <текст>')
+    try:
+        reply = llm_complete(user_prompt=question, system_prompt=SYSTEM_PROMPT,
+                             temperature=0.2, max_tokens=500)
+        bot.reply_to(message, reply)
+    except LLMError:
+        bot.reply_to(message, 'Сервис ответа временно недоступен. Попробуйте позже.')
 
 
 def main_menu_kb() -> types.ReplyKeyboardMarkup:
