@@ -33,6 +33,19 @@ SYSTEM_PROMPT = (
     'Если ответ может быть воспринят как совет — добавь дисклеймер.'
 )
 
+@bot.message_handler(commands=["api"])
+def get_usd_rate(message):
+    try:
+        data = requests.get('https://www.cbr-xml-daily.ru/daily_json.js', timeout=10).json()
+        usd = data['Valute']['USD']['Value']
+        date = data['Date'][:10]
+        text = f"📅 Курс USD на {date}: {usd:.2f} ₽"
+    except Exception as e:
+        text = f"⚠️ Ошибка: {e}"
+        bot.reply_to(message, text)
+
+
+
 @bot.message_handler(commands=['ask'])
 def handle_ask(message):
     text = (message.text or '').split(' ', 1)
@@ -45,7 +58,6 @@ def handle_ask(message):
         bot.reply_to(message, reply)
     except LLMError:
         bot.reply_to(message, 'Сервис ответа временно недоступен. Попробуйте позже.')
-
 
 def main_menu_kb() -> types.ReplyKeyboardMarkup:
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -205,7 +217,6 @@ def handle_text(message: telebot.types.Message):
         return handle_fx(message)
     if "новост" in text or "рынок" in text or "экономик" in text:
         return handle_news(message)
-
     if text.lower() in ["биткоин", "курс биткоина", "курс bitcoin", "bitcoin"]:
         bot.reply_to(message, "скоро будет")
         return
